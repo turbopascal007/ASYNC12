@@ -1,0 +1,257 @@
+                                    ASYNC12
+        Asyncronous Serial Communications Package for Turbo Pascal V5.0
+                             Version 1.2 - 06/14/89
+                 Copyright (C) 1989, Rising Edge Data Services
+
+ASYNC12 is a full-featured Turbo Pascal UNIT that provides interrupt-driven
+serial communication PC-compatable computers utilizing standard serial port
+hardware (INS 8250's or equivalent).  Unlike similar offerings for Pascal
+programmers, ASYNC12 supports full input and output buffering for up to 4
+ports operating CONCURRENTLY, with optional full hardware and/or software
+handshaking.  In addition, key high-demand subroutines as well as the int-
+errupt driver are implimented in assembly language for maximum performance.
+Baud rates to 115200 are supported, as well as non-standard rates and all
+possible wordsize/parity/stopbit combinations allowed by the 8250 UART.
+
+Features -- Version 1.2
+=======================
+
+*  Supports up to 4 ports simultaneously.
+*  Completely interrupt driven I/O for greatest efficiency.
+*  Assembly language used for the interrupt driver and key high-performance
+   procedures and functions maximize throughput.
+*  Created as a Turbo Pascal UNIT for ease of use.
+*  Tight, well-commented, structured code for ease of modification/enhancement.
+   Includes both Pascal and Assembly source.
+*  Supports both hardware (RTS/CTS) and software (XON/XOFF) handshaking,
+   at the user's option.
+*  28 procedures and functions in all to minimize programmer design time.
+
+ASYNC12 supports the serial ports mapped at the following addresses and hard-
+ware interrupt lines:
+
+Port#  Address  Interrupt
+-----  -------  ---------
+COM1    03F8h       4
+COM2    02F8h       3
+COM3    03E8h       4
+COM4    02E8h       3
+
+The port addresses may be reassigned by changing the contents of the global
+constant array C_PortAddr.  For example, to map COM3 at address 3D8h, you
+might code it like this (should be done before OpenCom is called) :
+
+C_PortAddr[3] := $3D8;
+
+To change interrupt priorities (i.e. which hardware interrupt line a port
+uses), change the appropriate element in the global constant array
+C_PortInt.  For example, if COM1 is wired to use INT5, make the following
+assignment (before calling OpenCom):
+
+C_PortInt[1] := 5;
+
+Finally, the number of ports supported can be changed, although recompilation
+of the unit is nessesary in this case.  Load the unit and change the constant
+C_MaxPort to the highest available port.  Then fill in the defaults for
+C_PortAddr and C_PortInt as appropriate and recompile the unit.
+
+ASYNC12 will most likely NOT work with multiport boards (like the GTEK PCSS-4
+and -8 models) that use one standard COM port address to "multiplex" 2 or more
+ports.  ASYNC12 WILL support the "currently active port" on such boards, but
+does NOT support the port switching mechanisim nessesary for full utilization
+of these boards, although it may be possible to modify the code for this.
+
+Available procedures and functions
+==================================
+
+User-accessable procedures and functions will be listed below along with a
+concise explaination of their function.  For more complete documentation and
+revision information, refer to the Pascal source code.
+
+In all cases:  ComPort = Port # to use, range = 1 to C_MaxPort (usually 4).
+
+Procedure ClearCom(ComPort:Byte; IO:Char);
+  - Clear input (IO='I'), output (IO='O') or both (IO='B') buffers
+
+Procedure CloseCom(ComPort:Byte);
+  - Close a port previously opened for I/O
+
+Procedure CloseAllComs;
+  - Close ALL active ports
+
+Function ComBufferLeft(ComPort:Byte; IO:Char) : Word;
+  - Returns #bytes free in the input (IO='I') or output (IO='O') buffers
+
+Function ComExist(ComPort:Byte) : Boolean;
+  - Performs a hardware-based test to determine if a port exists
+
+Function ComReadCh(ComPort:Byte) : Char;
+  - Get one character from the selected input buffer
+
+Function ComReadChW(ComPort:Byte) : Char;
+  - Get one character from the selected input buffer, wait for it if nessesary
+
+Procedure ComReadln(ComPort:Byte; Var St:String; Size:Byte; Echo:Boolean);
+  - Get a string from the selected port.  Echoback & simple editing supported
+
+Function ComTrueBaud(Baud:Longint) : Real;
+  - Compute actual baud rate that the hardware will transmit at
+
+Procedure ComParams(ComPort:Byte; Baud:LongInt; WordSize:Byte; Parity:Char; StopBits:Byte);
+  - Set baud rate, word size, parity and stop bit options for selected port
+
+Procedure ComWaitForClear(ComPort:Byte);
+  - Suspend execution until selected port's output buffer is clear
+
+Procedure ComWrite(ComPort:Byte; St:String);
+  - Send a string out the selected port (place in output buffer)
+
+Procedure ComWriteCh(ComPort:Byte; Ch:Char);
+  - Place a character in the output buffer of the selected port
+
+Procedure ComWriteChW(ComPort:Byte; Ch:Char);
+  - Place character in output buffer, waiting for buffer space if nessesary.
+
+Procedure ComWriteln(ComPort:Byte; St:String);
+  - Send string out selected port with appended CR/LF.
+
+Procedure ComWriteWithDelay(ComPort:Byte; St:String; Dly:Word);
+  - Send string out selected port, delaying between character transmissions
+
+Function CTSStat(ComPort:Byte) : Boolean;
+  - Returns status of RS232 "Clear To Send" (CTS) signal line (pin 5)
+
+Function DCDStat(ComPort:Byte) : Boolean;
+  - Returns status of RS232 "Data Carrier Detect" (DCD) signal line (pin 8)
+
+Function DSRStat(ComPort:Byte) : Boolean;
+  - Returns status of RS232 "Data Set Ready" (DSR) signal line (pin 6)
+
+Function OpenCom(ComPort:Byte; InBufferSize,OutBufferSize:Word) : Boolean;
+  - Prepares communications system for I/O on selected port
+
+Function RIStat(ComPort:Byte) : Boolean;
+  - Returns status of RS232 Ring Indicator (RI) signal line (pin 22)
+
+Procedure SetCTSMode(ComPort:Byte; Mode:Boolean);
+  - Enables or disables built-in CTS hardware handshaking for transmission
+
+Procedure SetDTR(ComPort:Byte; Assert:Boolean);
+  - Provides control for the RS232 "Data Terminal Ready" (DTR) line (pin 20)
+
+Procedure SetOUT1(ComPort:Byte; Assert:Boolean);
+  - Controls logic level (ASSERT=TRUE for low level) of 8250 OUT1 signal line
+
+Procedure SetOUT2(ComPort:Byte; Assert:Boolean);
+  - Controls logic level (ASSERT=TRUE for low level) of 8250 OUT2 signal line.
+    Used as a redundant mechanisim for controlling 8250 interrupts on PC's.
+
+Procedure SetRTS(ComPort:Byte; Assert:Boolean);
+  - Provides control for the RS232 "Request To Send" (RTS) line (pin 4)
+    Note: Avoid using this procedure if automatic RTS handshaking enabled.
+
+Procedure SetRTSMode(ComPort:Byte; Mode:Boolean; RTSOn,RTSOff:Word);
+  - Enables or disables RTS hardware handshake for reception
+    Also controls assert/unassert points when enabled.
+
+Procedure SoftHandshake(ComPort:Byte; Mode:Boolean; Start,Stop:Char);
+  - Enables or disables XON/XOFF software handshake (transmission ONLY).
+    Also allows XON/XOFF characters to be redefined.
+
+Variable(s)             Type            Function
+----------------------  --------------  ----------------------------------
+C_InBufPtr,C_OutBufPtr  C_PointerArray  Input/output buffer pointers
+C_InHead,C_OutHead      C_WordArray     Input/output head pointers
+C_InTail,C_OutTail      C_WordArray     Input/output tail pointers
+C_InSize,C_OutSize      C_WordArray     Input/output buffer sizes
+C_RTSOn,C_RTSOff        C_WordArray     RTS assert/drop buffer points
+C_StartChar,C_StopChar  C_CharArray     Soft hndshake start/stop char
+C_Status,C_Ctrl         C_ByteArray     STATUS and CONTROL registers
+C_PortOpen              C_BooleanArray  Port open/close flags
+C_PortAddr              C_WordArray     Base address of 8250 UART for port
+C_PortInt               C_ByteArray     Hard INT line used by UART for port
+
+Status byte definition (C_Status):
+  7   6   5   4   3   2   1   0
+  |   |   |   |   |   |   |   |____ Input buffer empty
+  |   |   |   |   |   |   |________ Input buffer full
+  |   |   |   |   |   |____________ Output buffer empty
+  |   |   |   |   |________________ Output buffer full
+  |   |   |   |____________________ Input buffer overflow
+  |   |   |________________________ Output buffer overflow
+  |   |____________________________ Hard handshake active (xmit stopped)
+  |________________________________ Soft handshake active (xmit stopped)
+
+Control byte definition (C_Ctrl):
+  7   6   5   4   3   2   1   0
+  |   |   |   |   |   |   |   |____ Enable RTS handshake
+  |   |   |   |   |   |   |________ Enable CTS handshake
+  |   |   |   |   |   |____________ Enable software handshake (xmit only)
+  |   |   |   |   |________________
+  |   |   |   |____________________
+  |   |   |________________________
+  |   |____________________________
+  |________________________________ Pyrotronics XL3 mode (do not use!)
+
+Files in archive:
+-----------------
+ASYNC12.PAS     - Pascal unit source code
+ASYNC12.ASM     - Assembly source for external routines and communications
+                  interrupt service routines.
+ASYNC12.DOC     - This file
+ASYNC.OBJ       - Assembled ASYNC.ASM
+ASYNC12.TPU     - Compiled ready-to-use Turbo Pascal V5.0 UNIT
+
+Note to Assembly-language programmers:  The ASYNC.ASM source file was assembled
+using Borland's Turbo Assembler (V1.0).  Since the assembler's IDEAL mode
+was used throught, it will require some modifications to the source to get it
+to assemble properly with MASM.  The ASYNC12.PAS file expects to find the
+file "ASYNC.OBJ" in a directory locatable by the compiler (usually the same
+dir as the source) at compile-time.  The "{$L ASYNC.OBJ}" compiler directive
+controls this -- you may change the file path if it suits you.
+
+==============================================================================
+
+DISCLAIMER and USAGE AGREEMENT:
+
+Yes, this is the place where the standard batch of legalese goes.  When trans-
+lated into English it usually boils down to "Use of this program is your
+responsibility and not ours".  Effort has been made to provide software that
+is beleived to function as documented, but no guarantees can be made as to
+whether or not it will ever work out for you.  If this software malfunctions
+and, let's say your house or business burns down or blows itself up because
+of that malfunction, you're responsible for covering the loss -- not us.
+In short, if you use this software, and you experience loss and/or inconven-
+ience because of it, tough! (And if the world were populated exclusively by
+reasonable people, instead of those types that file lawsuits whenever someone
+looks at them the wrong way, time- and space-wasting statements like this
+would be unnessesary).
+
+Permission is hereby granted to distribute this package (the "software" ) to
+friends, over information networks or through public-domain distribution houses
+provided this documentation accompanies it.  This software may NOT be
+distributed for profit or monetary gain (other than the single-disk asking
+price of a shareware distributor used to cover duplication and distribution
+costs, not to exceed $10 in any event).  Rising Edge Data Services reserves
+all copyrights in regard to the software and the accompanying documentation
+and may change the software without notice.
+
+With that out of the way, your comments, suggestions, bug reports (and
+donations, $20 suggested) are welcome.  Any donations will be used to finance
+improvements to this and other forthcoming modules.
+
+You may reach me in the following ways:
+
+Via US Mail:                           Via Modem
+------------------------               ---------------------------
+Mark L. Schultz                        Best Power Technology BBS
+Rising Edge Data Services              Necedah, WI  USA
+201 Liberty St. Apt. #4                User name: Mark Schultz (or SYSOP)
+Mauston, WI  USA 53948                 Phone: (608) 565-7424
+Voice: (608) 847-4287
+
+I can also be reached at the Exec-PC multiuser BBS based in Milwaukee, WI USA
+Phone: 414-964-5160.  Username: Best Power
+
+==============================================================================
+
